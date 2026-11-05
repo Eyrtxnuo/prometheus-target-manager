@@ -1,4 +1,4 @@
-import express, { type Request, type Response, type NextFunction} from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 
 const app = express();
 const PORT = process.env.PORT || 9089;
@@ -12,14 +12,20 @@ app.get('/', (req: Request, res: Response) => {
 
 app.post('/targets/create', (req: Request, res: Response) => {
 
-  parseCreationRequest(req.body);
-  res.status(201).json({ "end":"a" });
+  let targets = parseCreationRequest(req.body);
+
+  // TODO: manda target parsati alla funzione di creazione target.
+  res.status(201).json({ "message": "Ok" });
 });
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  if(err instanceof SyntaxError){
+  if (err instanceof ParseError) {
+    res.status(400).send({ "error": `[${err.name}] ${err.message}` });
+    return;
+  }
+  if (err instanceof SyntaxError) {
     res.status(400).send('{"error":"Invalid body"}');
-    return
+    return;
   }
   console.error(err.stack);
   res.status(500).send('{"error":"Server Error"}');
@@ -31,21 +37,59 @@ app.listen(PORT, () => {
 
 
 
-function parseCreationRequest(body: any): Array<PrTarget> {
-  let targetObjects = body as Array<PrTarget>;
-
-  if (!Array.isArray(targetObjects)) {
+function parseCreationRequest(body: unknown): Array<PrTarget> {
+  if (!Array.isArray(body)) {
     throw new ParseError("The body is not a valid JSON array")
   }
 
-  targetObjects.forEach(element => {
-    if(element.targets == null || !Array.isArray(element.targets))
-    {
-      throw new ParseError("Parse error")
+  let parsedTargets = body.map((element, index) => {
+    if (!isRecord(element)) {
+      throw new ParseError(`Target[${index}] is not an object`)
     }
+
+    if (!Array.isArray(element.targets) ||
+      !element.targets.every(target => typeof target === 'string')
+    ) {
+      throw new ParseError(`Target[${index}] has invalid target urls`)
+    }
+    if (element.targets.length === 0) {
+      throw new ParseError(`Target[${index}] has no target specified`)
+    }
+
+    if (!isRecordAllStrings(element.labels)) {
+      throw new ParseError(`Target[${index}] has non-string labels`)
+    }
+
+    return {
+      targets: element.targets,
+      labels: element.labels,
+    };
   });
-  console.log('Target ricevuti:', targetObjects);
-  throw new Error("Not implemented");
+
+  if (parsedTargets.length < 1) {
+    throw new ParseError("No target specified")
+  }
+
+  return parsedTargets;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value)
+  );
+}
+
+function isRecordAllStrings(value: unknown): value is Record<string, string> {
+  if (!isRecord(value)) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return (
+    (proto === null || proto === Object.prototype) &&
+    Object.values(value).every(item => typeof item === 'string')
+  );
 }
 
 class ParseError extends Error {
@@ -56,6 +100,6 @@ class ParseError extends Error {
 }
 
 type PrTarget = {
-    targets: string[];
-    labels: Record<string, string>;
-  }
+  targets: string[];
+  labels: Record<string, string>;
+}
