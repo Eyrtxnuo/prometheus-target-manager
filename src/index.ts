@@ -1,7 +1,10 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
+import settings from './settings.js'
+import { ParseError, type PrTarget } from './types.js';
+import { createPrometheusTarget } from './target-manager.js';
 
 const app = express();
-const PORT = process.env.PORT || 9089;
+const PORT = settings.PORT;
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.type('json');
@@ -19,6 +22,8 @@ app.post('/targets/create', (req: Request, res: Response) => {
   let targets = parseCreationRequest(req.body);
 
   // TODO: manda target parsati alla funzione di creazione target.
+  createPrometheusTarget(targets);
+  
   res.status(201).json({ "message": "Ok" });
 });
 
@@ -96,14 +101,3 @@ function isRecordAllStrings(value: unknown): value is Record<string, string> {
   );
 }
 
-class ParseError extends Error {
-  constructor(message?: string) {
-    super(message);
-    this.name = "ParseError";
-  }
-}
-
-type PrTarget = {
-  targets: string[];
-  labels: Record<string, string>;
-}
