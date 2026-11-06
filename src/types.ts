@@ -5,7 +5,21 @@ export class ParseError extends Error {
   }
 }
 
+
+export type RequestFormat = {
+    id: string,
+    targets: string[],
+    labels: Record<string, string>
+}
+
 export type PrTarget = {
-  targets: string[];
-  labels: Record<string, string>;
+    targets: string[],
+    labels: Record<string, string>,
+}
+
+export function RequestToPrTarget(RequestFormat: RequestFormat): PrTarget{
+     return {
+      targets: RequestFormat.targets,
+      labels: RequestFormat.labels,
+    };
 }

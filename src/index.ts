@@ -1,6 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import settings from './settings.js'
-import { ParseError, type PrTarget } from './types.js';
+import { ParseError, type RequestFormat } from './types.js';
 import { createPrometheusTarget } from './target-manager.js';
 
 const app = express();
@@ -46,7 +46,7 @@ app.listen(PORT, () => {
 
 
 
-function parseCreationRequest(body: unknown): Array<PrTarget> {
+function parseCreationRequest(body: unknown): Array<RequestFormat> {
   if (!Array.isArray(body)) {
     throw new ParseError("The body is not a valid JSON array")
   }
@@ -56,6 +56,9 @@ function parseCreationRequest(body: unknown): Array<PrTarget> {
       throw new ParseError(`Target[${index}] is not an object`)
     }
 
+    if (element.id === null || typeof element.id !== 'string' || element.id === "") { // non controllo id duplicato, un id già esistente farà update/override
+      throw new ParseError(`Target[${index}] has invalid id`)
+    }
     if (!Array.isArray(element.targets) ||
       !element.targets.every(target => typeof target === 'string')
     ) {
@@ -70,6 +73,7 @@ function parseCreationRequest(body: unknown): Array<PrTarget> {
     }
 
     return {
+      id: element.id,
       targets: element.targets,
       labels: element.labels,
     };
