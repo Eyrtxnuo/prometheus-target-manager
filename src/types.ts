@@ -16,6 +16,8 @@ export class ServerError extends Error {
 type Id = string;
 
 export type RequestFormat = PrTarget & {id: Id}
+export type DeleteFormat = {id: Id, delete:string}
+export type EntryFormat = RequestFormat | DeleteFormat;
 
 export type PrTarget = {
     targets: string[],
@@ -35,3 +37,6 @@ export function RequestToPrTarget(RequestFormat: RequestFormat): PrTarget{
       labels: RequestFormat.labels,
     };
 }
+
+
+export const DELETE_SAFE_WORD = "ConfirmDeletion";

@@ -1,14 +1,19 @@
 import * as fs from 'fs';
 import * as path from 'node:path';
 import settings from './settings.js'
-import { ParseError, RequestToPrTarget, ServerError, type FileEntry, type PrTarget, type RequestFormat } from './types.js';
+import { ParseError, RequestToPrTarget, ServerError, type EntryFormat, type FileEntry, type PrTarget, type RequestFormat } from './types.js';
 import { fail } from 'node:assert';
 import { rejects } from 'assert';
 
-export async function createPrometheusTarget(targetList: Array<RequestFormat>): Promise<Object>{
+export async function createPrometheusTarget(entryList: Array<EntryFormat>): Promise<Object>{
+
     
     // console.log(generateJsonFromTargetList(targetList));// [debug]
     // console.log(readTargetDirectory());// [debug]
+    var targetList = entryList.filter((e)=> {
+        console.log();
+    })
+    throw new Error("unpatched")
 
     var nuovi: number = 0;
     var sovrascritti: number = 0;

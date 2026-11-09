@@ -1,6 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import settings from './settings.js'
-import { ParseError, type RequestFormat } from './types.js';
+import { DELETE_SAFE_WORD, ParseError, type EntryFormat, type RequestFormat } from './types.js';
 import { createPrometheusTarget } from './target-manager.js';
 
 const app = express();
@@ -21,9 +21,10 @@ app.post('/targets/create', async (req: Request, res: Response) => {
 
   let targets = parseCreationRequest(req.body);
 
+
   // TODO: manda target parsati alla funzione di creazione target.
   var msg = await createPrometheusTarget(targets);
-  
+
   res.status(201).json(msg);
 });
 
@@ -46,7 +47,7 @@ app.listen(PORT, () => {
 
 
 
-function parseCreationRequest(body: unknown): Array<RequestFormat> {
+function parseCreationRequest(body: unknown): Array<EntryFormat> {
   if (!Array.isArray(body)) {
     throw new ParseError("The body is not a valid JSON array")
   }
@@ -56,9 +57,19 @@ function parseCreationRequest(body: unknown): Array<RequestFormat> {
       throw new ParseError(`Target[${index}] is not an object`)
     }
 
-    if (element.id === null || typeof element.id !== 'string' || element.id === "") { // non controllo id duplicato, un id già esistente farà update/override
+    if (element.id === null || element.id === undefined || typeof element.id !== 'string' || element.id === "") { // non controllo id duplicato, un id già esistente farà update/override
       throw new ParseError(`Target[${index}] has invalid id`)
     }
+    //////////////controllo per DeleteFormat
+    if (element.delete !== null && element.delete !== undefined) {
+      if (typeof element.delete == 'string' && DELETE_SAFE_WORD.match(element.delete)) { // se delete ha il testo sbagliato o non è stringa, considero come formato errato dei dati
+        return {id: element.id, delete:element.delete}
+      }else{
+        throw new ParseError(`Target[${index}] delete request is malformed, delete field should be '${DELETE_SAFE_WORD}'`);
+      }
+    }
+    ////////////////////////////////////////
+
     if (!Array.isArray(element.targets) ||
       !element.targets.every(target => typeof target === 'string')
     ) {
