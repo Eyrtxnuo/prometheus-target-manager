@@ -7,8 +7,8 @@ import { rejects } from 'assert';
 
 export async function createPrometheusTarget(targetList: Array<RequestFormat>): Promise<Object>{
     
-    console.log(generateJsonFromTargetList(targetList));// [debug]
-    console.log(readTargetDirectory());// [debug]
+    // console.log(generateJsonFromTargetList(targetList));// [debug]
+    // console.log(readTargetDirectory());// [debug]
 
     var nuovi: number = 0;
     var sovrascritti: number = 0;
@@ -37,9 +37,9 @@ export async function createPrometheusTarget(targetList: Array<RequestFormat>): 
         }
     })
 
-    console.log("Fails: "+(fails.length>0?fails:"no fail occurred"));
 
     if(fails.length>0){
+        console.log("Fails: "+fails)
         return {
             "status": "ERR",
             "error":"Failed to add some targets",
@@ -48,7 +48,7 @@ export async function createPrometheusTarget(targetList: Array<RequestFormat>): 
     }
     return {
             "status": "OK",
-            "message":"Ok"
+            "message":`${nuovi} new target added, ${sovrascritti} updated targets`
         };
 }
 
