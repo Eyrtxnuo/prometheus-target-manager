@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'node:path';
 import settings from './settings.js'
-import { RequestToPrTarget, ServerError, type FileEntry, type PrTarget, type RequestFormat } from './types.js';
+import { ParseError, RequestToPrTarget, ServerError, type FileEntry, type PrTarget, type RequestFormat } from './types.js';
 import { fail } from 'node:assert';
 import { rejects } from 'assert';
 
@@ -33,7 +33,7 @@ export async function createPrometheusTarget(targetList: Array<RequestFormat>): 
     var fails: Array<string> = [];
     results.forEach((res, index)=>{
         if(res.status === "rejected"){
-            fails.push(`Failed to add the ${index}° target: ${res.reason}`)
+            fails.push(`Failed to add the [${index}] target: ${res.reason}`)
         }
     })
 
@@ -60,7 +60,6 @@ function generateJsonFromTargetList(targets: Array<RequestFormat>): Array<FileEn
             content: JSON.stringify(RequestToPrTarget(tar))// per ora basta stringify, il filtraggio targets non validi è fatto nella porzione express
         } as FileEntry
     })
-    throw new Error("uninplemented");
 }
 
 function readTargetDirectory() {
@@ -81,7 +80,10 @@ async function writeTargetToDirectory(fileEntry: FileEntry) {
     return;
 }
 
-function getEntryAbsolutePath(fileEntry:FileEntry){
+function getEntryAbsolutePath(fileEntry:FileEntry): string{
+    if(!/^[a-zA-Z0-9]+$/.test(fileEntry.id)){// id deve essere solo alfanumerico, altrimenti blocco con un throw per evitare giochetti con il path
+        throw new ParseError(`Invalid ID: ${fileEntry.id}`);
+    }
     var absPath = path.resolve(settings.TARGETS_DIR, fileEntry.id+".json");
     return absPath;
 }
