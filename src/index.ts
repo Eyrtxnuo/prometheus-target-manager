@@ -1,6 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import settings from './settings.js'
-import { DELETE_SAFE_WORD, ParseError, type EntryFormat, type RequestFormat } from './types.js';
+import { DELETE_SAFE_WORD, ParseError, type DeleteFormat, type EntryFormat, type TargetFormat } from './types.js';
 import { createPrometheusTarget } from './target-manager.js';
 
 const app = express();
@@ -63,7 +63,11 @@ function parseCreationRequest(body: unknown): Array<EntryFormat> {
     //////////////controllo per DeleteFormat
     if (element.delete !== null && element.delete !== undefined) {
       if (typeof element.delete == 'string' && DELETE_SAFE_WORD.match(element.delete)) { // se delete ha il testo sbagliato o non è stringa, considero come formato errato dei dati
-        return {id: element.id, delete:element.delete}
+        return {
+          id: element.id,
+          type: "Delete",
+          delete:element.delete,
+        } as DeleteFormat;
       }else{
         throw new ParseError(`Target[${index}] delete request is malformed, delete field should be '${DELETE_SAFE_WORD}'`);
       }
@@ -85,9 +89,10 @@ function parseCreationRequest(body: unknown): Array<EntryFormat> {
 
     return {
       id: element.id,
+      type: "Target",
       targets: element.targets,
       labels: element.labels,
-    };
+    } as TargetFormat;
   });
 
   if (parsedTargets.length < 1) {

@@ -13,11 +13,12 @@ export class ServerError extends Error {
 }
 
 
-type Id = string;
+export type Id = string;
+type EntryHeader = {id: Id, type: "Target" | "Delete"};
 
-export type RequestFormat = PrTarget & {id: Id}
-export type DeleteFormat = {id: Id, delete:string}
-export type EntryFormat = RequestFormat | DeleteFormat;
+export type TargetFormat = EntryHeader & PrTarget;
+export type DeleteFormat = EntryHeader & {delete:string};
+export type EntryFormat = TargetFormat | DeleteFormat;
 
 export type PrTarget = {
     targets: string[],
@@ -31,7 +32,7 @@ export type FileEntry = {
 
 
 
-export function RequestToPrTarget(RequestFormat: RequestFormat): PrTarget{
+export function RequestToPrTarget(RequestFormat: TargetFormat): PrTarget{
      return {
       targets: RequestFormat.targets,
       labels: RequestFormat.labels,
