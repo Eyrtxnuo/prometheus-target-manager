@@ -26,8 +26,8 @@ function generateJsonFromTargetList(targets: Array<RequestFormat>): Array<FileEn
 
 function readTargetDirectory() {
   try {
-    const files = fs.readdirSync(settings.TARGETS_DIR, {withFileTypes:true, recursive:false});
-    files.filter((f)=>{
+    var files = fs.readdirSync(settings.TARGETS_DIR, {withFileTypes:true, recursive:false});
+    files = files.filter((f)=>{
         return f.isFile() && f.name.endsWith(".json"); // filtra solo file .json
     })
     return files;
