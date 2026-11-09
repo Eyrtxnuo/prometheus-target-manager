@@ -6,16 +6,21 @@ export class ParseError extends Error {
 }
 
 
-export type RequestFormat = {
-    id: string,
-    targets: string[],
-    labels: Record<string, string>
-}
+type Id = string;
+
+export type RequestFormat = PrTarget & {id: Id}
 
 export type PrTarget = {
     targets: string[],
     labels: Record<string, string>,
 }
+
+export type FileEntry = {
+  id: Id,
+  content: string
+}
+
+
 
 export function RequestToPrTarget(RequestFormat: RequestFormat): PrTarget{
      return {
