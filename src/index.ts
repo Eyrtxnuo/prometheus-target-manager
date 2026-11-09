@@ -17,14 +17,14 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 
-app.post('/targets/create', (req: Request, res: Response) => {
+app.post('/targets/create', async (req: Request, res: Response) => {
 
   let targets = parseCreationRequest(req.body);
 
   // TODO: manda target parsati alla funzione di creazione target.
-  createPrometheusTarget(targets);
+  var msg = await createPrometheusTarget(targets);
   
-  res.status(201).json({ "message": "Ok" });
+  res.status(201).json(msg);
 });
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

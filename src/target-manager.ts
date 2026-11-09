@@ -1,16 +1,55 @@
 import * as fs from 'fs';
+import * as path from 'node:path';
 import settings from './settings.js'
 import { RequestToPrTarget, ServerError, type FileEntry, type PrTarget, type RequestFormat } from './types.js';
+import { fail } from 'node:assert';
+import { rejects } from 'assert';
 
-export function createPrometheusTarget(targetList: Array<RequestFormat>){
+export async function createPrometheusTarget(targetList: Array<RequestFormat>): Promise<Object>{
     
     console.log(generateJsonFromTargetList(targetList));// [debug]
     console.log(readTargetDirectory());// [debug]
 
+    var nuovi: number = 0;
+    var sovrascritti: number = 0;
 
-    
+    var newtargets = generateJsonFromTargetList(targetList);
+    var existTargets = readTargetDirectory().map((f)=>{
+        return f.name.split(".json")[0]!;
+    });
 
+    newtargets.forEach(tar => {
+        if(existTargets.includes(tar.id)){
+            sovrascritti++;
+        }else{
+            nuovi++;
+        }
+    });
+    //writeTargetToDirectory(newtargets[0]!);
+    var promises = newtargets.map((fe)=>{
+        return writeTargetToDirectory(fe);
+    })
+    var results = await Promise.allSettled(promises);
+    var fails: Array<string> = [];
+    results.forEach((res, index)=>{
+        if(res.status === "rejected"){
+            fails.push(`Failed to add the ${index}° target: ${res.reason}`)
+        }
+    })
 
+    console.log("Fails: "+(fails.length>0?fails:"no fail occurred"));
+
+    if(fails.length>0){
+        return {
+            "status": "ERR",
+            "error":"Failed to add some targets",
+            "reasons":fails
+        };
+    }
+    return {
+            "status": "OK",
+            "message":"Ok"
+        };
 }
 
 
@@ -34,4 +73,15 @@ function readTargetDirectory() {
   } catch (err: any) {
     throw new ServerError(err?.message);// rilancio dell'errore con classe custom
   }
+}
+
+async function writeTargetToDirectory(fileEntry: FileEntry) {
+    var path = getEntryAbsolutePath(fileEntry);
+    fs.writeFileSync(path, fileEntry.content, {flag:"w+"})//w+ sovrascrive file già presenti.
+    return;
+}
+
+function getEntryAbsolutePath(fileEntry:FileEntry){
+    var absPath = path.resolve(settings.TARGETS_DIR, fileEntry.id+".json");
+    return absPath;
 }
