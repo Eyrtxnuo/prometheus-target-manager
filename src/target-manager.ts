@@ -1,9 +1,11 @@
+import * as fs from 'fs';
 import settings from './settings.js'
-import { RequestToPrTarget, type FileEntry, type PrTarget, type RequestFormat } from './types.js';
+import { RequestToPrTarget, ServerError, type FileEntry, type PrTarget, type RequestFormat } from './types.js';
 
 export function createPrometheusTarget(targetList: Array<RequestFormat>){
     
     console.log(generateJsonFromTargetList(targetList));// [debug]
+    console.log(readTargetDirectory());// [debug]
 
 
     
@@ -20,4 +22,16 @@ function generateJsonFromTargetList(targets: Array<RequestFormat>): Array<FileEn
         } as FileEntry
     })
     throw new Error("uninplemented");
+}
+
+function readTargetDirectory() {
+  try {
+    const files = fs.readdirSync(settings.TARGETS_DIR, {withFileTypes:true, recursive:false});
+    files.filter((f)=>{
+        return f.isFile() && f.name.endsWith(".json"); // filtra solo file .json
+    })
+    return files;
+  } catch (err: any) {
+    throw new ServerError(err?.message);// rilancio dell'errore con classe custom
+  }
 }

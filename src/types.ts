@@ -5,6 +5,13 @@ export class ParseError extends Error {
   }
 }
 
+export class ServerError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = "ServerError";
+  }
+}
+
 
 type Id = string;
 
