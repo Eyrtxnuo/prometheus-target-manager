@@ -14,5 +14,4 @@ services:
 
     # Variabili d'ambiente passate al container
     environment:
-      - NODE_ENV=production
-      - CONTAINER_PORT=${APP_PORT:-80}
+      - PORT=${PORT:-9089}
