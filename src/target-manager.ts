@@ -88,7 +88,7 @@ function generateJsonFromTargetList(targets: Array<TargetFormat>): Array<FileEnt
     return targets.map((tar)=>{
         return {
             id: tar.id,
-            content: JSON.stringify(RequestToPrTarget(tar))// per ora basta stringify, il filtraggio targets non validi è fatto nella porzione express
+            content: JSON.stringify([RequestToPrTarget(tar)])// per ora basta stringify, il filtraggio targets non validi è fatto nella porzione express
         } as FileEntry
     })
 }
