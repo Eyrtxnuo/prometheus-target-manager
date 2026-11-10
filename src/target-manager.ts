@@ -79,7 +79,7 @@ export async function createPrometheusTarget(entryList: Array<EntryFormat>): Pro
     }
     return {
             "status": "OK",
-            "message":`${nuovi} new target added, ${sovrascritti} updated targets`,
+            "message":`${nuovi} new target added, ${sovrascritti} updated targets, ${cancellati} deleted targets`,
         };
 }
 

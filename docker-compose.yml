@@ -1,0 +1,18 @@
+services:
+  target-manager-prometheus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: target-manager-prometheus
+    restart: unless-stopped
+
+    ports:
+      - "${PORT:-9089}:${PORT:-9089}"
+
+    volumes:
+      - ${TARGETS_PATH:-/etc/prometheus/targets}:/etc/prometheus/targets
+
+    # Variabili d'ambiente passate al container
+    environment:
+      - NODE_ENV=production
+      - CONTAINER_PORT=${APP_PORT:-80}
