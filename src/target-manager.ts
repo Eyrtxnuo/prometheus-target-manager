@@ -107,7 +107,9 @@ function readTargetDirectory() {
 
 async function writeTargetToDirectory(fileEntry: FileEntry): Promise<Id> {
     var path = getAbsolutePathById(fileEntry.id);
-    fs.writeFileSync(path, fileEntry.content, {flag:"w+"})//w+ sovrascrive file già presenti.
+    var tempPath = path + ".tmp";
+    fs.writeFileSync(tempPath, fileEntry.content, {flag:"w+"})//w+ sovrascrive file già presenti.
+    fs.renameSync(tempPath, path);
     return fileEntry.id;  
 }
 
