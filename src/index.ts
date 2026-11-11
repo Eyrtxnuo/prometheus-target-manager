@@ -1,7 +1,7 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import settings from './settings.js'
 import { DELETE_SAFE_WORD, ParseError, type DeleteFormat, type EntryFormat, type TargetFormat } from './types.js';
-import { createPrometheusTarget, readTargetById } from './target-manager.js';
+import { createPrometheusTarget, deleteTargetById, readTargetById } from './target-manager.js';
 
 const app = express();
 const PORT = settings.PORT;
@@ -21,6 +21,13 @@ app.get('/target/:id', async (req: Request, res: Response) => {
   var id = req.params.id;
   if(typeof id !== "string") throw new ParseError("Id needs to be a string");
   res.send(await readTargetById(id));
+});
+
+app.delete('/target/:id', async (req: Request, res: Response) => {
+  var id = req.params.id;
+  if(typeof id !== "string") throw new ParseError("Id needs to be a string");
+  deleteTargetById(id);
+  res.send('{"status": "Ok", "message":"Target deleted succesfully"}');
 });
 
 app.post('/targets/multi', async (req: Request, res: Response) => {

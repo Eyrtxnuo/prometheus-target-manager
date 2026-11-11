@@ -137,7 +137,11 @@ function getAbsolutePathById(id: Id): string{
 async function deleteTarget(delReq: DeleteFormat): Promise<Id> {
     if(!DELETE_SAFE_WORD.match(delReq.delete)) //secondo controllo della safeword.
         throw new ParseError(`Target id: ${delReq.id}  delete request is malformed, delete field should be '${DELETE_SAFE_WORD}`) 
-    var path = getAbsolutePathById(delReq.id);
+    return deleteTargetById(delReq.id);
+}
+
+export async function deleteTargetById(id: Id): Promise<Id> {
+     var path = getAbsolutePathById(id);
     fs.unlinkSync(path)//unlink è cancella
-    return delReq.id;
+    return id;
 }
