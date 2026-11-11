@@ -113,7 +113,20 @@ async function writeTargetToDirectory(fileEntry: FileEntry): Promise<Id> {
     return fileEntry.id;  
 }
 
-function getAbsolutePathById(id: string): string{
+export async function readTargetById(id: Id): Promise<string> {
+    var path = getAbsolutePathById(id);
+    if(!fs.existsSync(path)){
+        return JSON.stringify(
+        {
+            "status": "ERR",
+            "error":"Target not found",
+        });
+    }
+    var buffer = fs.readFileSync(path);
+    return (new String(buffer)).toString();
+}
+
+function getAbsolutePathById(id: Id): string{
     if(!/^[a-zA-Z0-9]+$/.test(id)){// id deve essere solo alfanumerico, altrimenti blocco con un throw per evitare giochetti con il path
         throw new ParseError(`Invalid ID: ${id}`);
     }

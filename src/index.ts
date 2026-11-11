@@ -1,7 +1,7 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import settings from './settings.js'
 import { DELETE_SAFE_WORD, ParseError, type DeleteFormat, type EntryFormat, type TargetFormat } from './types.js';
-import { createPrometheusTarget } from './target-manager.js';
+import { createPrometheusTarget, readTargetById } from './target-manager.js';
 
 const app = express();
 const PORT = settings.PORT;
@@ -11,16 +11,21 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 })
 app.use(express.json());
+app.use(express.urlencoded());
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'Hi' });
 });
 
+app.get('/target/:id', async (req: Request, res: Response) => {
+  var id = req.params.id;
+  if(typeof id !== "string") throw new ParseError("Id needs to be a string");
+  res.send(await readTargetById(id));
+});
 
-app.post('/targets/create', async (req: Request, res: Response) => {
+app.post('/targets/multi', async (req: Request, res: Response) => {
 
   let targets = parseCreationRequest(req.body);
-
 
   // TODO: manda target parsati alla funzione di creazione target.
   var msg = await createPrometheusTarget(targets);
@@ -30,15 +35,22 @@ app.post('/targets/create', async (req: Request, res: Response) => {
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof ParseError) {
-    res.status(400).send({ "error": `[${err.name}] ${err.message}` });
+    res.status(400).send({ "status": "ERR", "error": `[${err.name}] ${err.message}` });
     return;
   }
   if (err instanceof SyntaxError) {
-    res.status(400).send('{"error":"Invalid body"}');
+    res.status(400).send('{"status": "ERR", "error":"Invalid body"}');
     return;
   }
   console.error(err.stack);
-  res.status(500).send('{"error":"Server Error"}');
+  res.status(500).send('{"status": "ERR", "error":"Server Error"}');
+});
+
+app.use((req, res) => {
+  res.status(404).json({ 
+    "status": "ERR",
+    "error": `Cannot ${req.method} ${req.originalUrl}`,
+  });
 });
 
 app.listen(PORT, () => {
