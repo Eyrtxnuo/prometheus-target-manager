@@ -6,7 +6,7 @@ import { fail } from 'node:assert';
 import { rejects } from 'assert';
 import { deflateRaw } from 'zlib';
 
-export async function createPrometheusTarget(entryList: Array<EntryFormat>): Promise<Object>{
+export async function createPrometheusTargets(entryList: Array<EntryFormat>): Promise<Object>{
 
     
     // console.log(generateJsonFromTargetList(targetList));// [debug]
@@ -81,6 +81,12 @@ export async function createPrometheusTarget(entryList: Array<EntryFormat>): Pro
             "status": "OK",
             "message":`${nuovi} new target added, ${sovrascritti} updated targets, ${cancellati} deleted targets`,
         };
+}
+
+export function createSingleTarget(target: TargetFormat){
+    var fe = generateJsonFromTargetList([target]);
+    if(fe == undefined || fe.length != 1 || fe[0] == undefined)throw new ParseError("Failed to generate JSON for target")
+    writeTargetToDirectory(fe[0]);
 }
 
 
