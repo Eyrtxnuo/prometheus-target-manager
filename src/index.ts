@@ -6,26 +6,50 @@ import { createPrometheusTargets, createSingleTarget, deleteTargetById, readTarg
 const app = express();
 const PORT = settings.PORT;
 
+// Middleware che forza gli header per rispondere in JSON
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.type('json');
   next();
 })
-app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.json()); // Middleware Parser JSON
+app.use(express.urlencoded()); // Middleware Parser url, per /target/:id
 
+// Route radice, risponde un messaggio fisso per dimostrare che è funzionante
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'Hi' });
 });
 
+/** Route getter dei target
+ * usa il segmento :id come identificativo alfanumerico per leggere il target, ritorna il contenuto puro del file json.
+ * (il file json è un array di oggetti, e avrà sempre un solo elemento)
+ */
 app.get('/target/:id', async (req: Request, res: Response) => {
   var id = req.params.id;
   if (typeof id !== "string") throw new ParseError("Id needs to be a string");
   res.send(await readTargetById(id));
 });
 
-app.post('/target/:id', async (req: Request, res: Response) => {
-  var id = req.params.id;
-  if (typeof id !== "string") throw new ParseError("Id needs to be a string");
+/** Route per aggiungere un target
+ * Il body della richiesta deve essere un target di prometheus (formato json dei file_sd_config) singolo.
+ * NON deve essere in un array. L'oggetto della richiesta deve avere:
+ * {
+ *    "id":"alfanumerico",
+ *    "targets" : [
+ *          "array di endpoint",
+ *          "devono essere stringhe",
+ *          "necessita almeno un endpoint"
+ *    ],
+ *    "labels" : {
+ *        "deve esistere":"ma può essere un oggetto vuoto{}",
+ *        "accetta solo":"stringhe",
+ *        "supporta le":"meta label",
+ *        "__metrics_path__": "/esempio/per/cambiare/path"
+ *    },
+ *    "qualunque altro campo":"verrà ignorato e non aggiunto al file JSON"
+ * }
+ * inviare un id già usato comporterà la sovrascrittura del target vecchio.
+ */
+app.post('/target/', async (req: Request, res: Response) => {
   var entry = parseTargetEntry(req.body);
   if(entry.type == "Delete" || entry.type !== "Target"){
     throw new ParseError("Parse exception");
@@ -34,6 +58,9 @@ app.post('/target/:id', async (req: Request, res: Response) => {
   res.send('{"status": "Ok", "message":"Target created succesfully"}');
 });
 
+/** Route delete dei target
+ * usa il segmento :id come identificativo alfanumerico per cancellare il target.
+ */
 app.delete('/target/:id', async (req: Request, res: Response) => {
   var id = req.params.id;
   if (typeof id !== "string") throw new ParseError("Id needs to be a string");
@@ -41,6 +68,16 @@ app.delete('/target/:id', async (req: Request, res: Response) => {
   res.send('{"status": "Ok", "message":"Target deleted succesfully"}');
 });
 
+/** Route per gestire più target in una sola richiesta.
+ * Il body della richiesta deve essere un array json [], e può contenere oggetti di due tipi:
+ * 1 - vedere POST /target/, aggiunta o sovrascrittura di un target.
+ * 2 - oggetto eliminazione: 
+ * {
+ *    "id":"da eliminare",
+ *    "delete":"ConfirmDeletion"
+ * }
+ * "delete" deve contenere quella esatta stringa, altrimenti viene ignorata la richiesta.
+ */
 app.post('/targets/multi', async (req: Request, res: Response) => {
 
   let targets = parseCreationRequest(req.body);
@@ -64,6 +101,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).send('{"status": "ERR", "error":"Server Error"}');
 });
 
+// Override dell'errore 404 in HTML di default
 app.use((req, res) => {
   res.status(404).json({
     "status": "ERR",
@@ -76,7 +114,7 @@ app.listen(PORT, () => {
 });
 
 
-
+// Funzione che prende il body dell'endpoint /targets/multi, ne verifica la validità, e trasforma in array di entry validi da essere eseguiti.
 function parseCreationRequest(body: unknown): Array<EntryFormat> {
   if (!Array.isArray(body)) {
     throw new ParseError("The body is not a valid JSON array")
@@ -101,6 +139,7 @@ function parseCreationRequest(body: unknown): Array<EntryFormat> {
   return parsedTargets;
 }
 
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return (
     value !== null &&
@@ -119,6 +158,10 @@ function isRecordAllStrings(value: unknown): value is Record<string, string> {
     Object.values(value).every(item => typeof item === 'string')
   );
 }
+
+
+// Funzione  che fa il parsing della singola entry dell'array di /targets/multi, oppure del body di POST /target, ne verifica la validità, e genera un oggetto TargetFormat o DeleteFormat in base al tipo di body.
+// Attenzione, mandare DeleteFormat a POST /target non è valido e viene considerato sintassi errata.
 function parseTargetEntry(element: Object): EntryFormat {
   if (!isRecord(element)) {
     throw new ParseError(`Is not an object`)
